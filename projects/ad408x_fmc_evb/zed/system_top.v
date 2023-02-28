@@ -186,7 +186,7 @@ module system_top (
     end else if (~sync_req_d[2] & sync_req_d[3]) begin
       ad9508_sync_s <= 1'b1;
     end
-  end;
+  end
 
   // instantiations
 
