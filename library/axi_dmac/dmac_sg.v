@@ -45,12 +45,15 @@ module dmac_sg #(
   parameter BYTES_PER_BEAT_WIDTH_SG = 3,
   parameter ASYNC_CLK_REQ_SG = 1
 ) (
-  input m_axi_aclk,
-  input m_axi_aresetn,
-
   input req_clk,
   input req_resetn,
   input req_enable,
+
+  output sg_clk,
+  input sg_resetn,
+  output sg_ext_resetn,
+  input sg_enable,
+  output sg_enabled,
 
   input req_in_valid,
   output req_in_ready,
@@ -70,6 +73,10 @@ module dmac_sg #(
   output [DMA_LENGTH_WIDTH-1:0] out_dest_stride,
   output [DMA_LENGTH_WIDTH-1:0] out_src_stride,
   output [31:0] resp_out_id,
+
+  // Master AXI interface
+  input                            m_axi_aclk,
+  input                            m_axi_aresetn,
 
   // Read address
   input                            m_axi_arready,
@@ -116,17 +123,22 @@ module dmac_sg #(
   reg [1:0] hwdesc_flags;
   reg [31:0] hwdesc_id;
 
-  wire sg_enable;
   wire sg_in_valid;
   wire sg_in_ready;
   wire sg_out_valid;
   wire sg_out_ready;
+  wire fetch_valid;
+  wire fetch_ready;
   wire fifo_in_valid;
   wire fifo_in_ready;
   wire fifo_out_valid;
   wire fifo_out_ready;
-  wire fetch_valid;
-  wire fetch_ready;
+  wire [32:0] fifo_in_data;
+  wire [32:0] fifo_out_data;
+
+  assign sg_clk = m_axi_aclk;
+  assign sg_ext_resetn = m_axi_aresetn;
+  assign sg_enabled = sg_enable | ~sg_in_ready;
 
   assign sg_in_ready = hwdesc_state == STATE_IDLE ? 1'b1 : 1'b0;
   assign fetch_valid = hwdesc_state == STATE_DESC_READY ? 1'b1 : 1'b0;
@@ -139,15 +151,6 @@ module dmac_sg #(
   assign m_axi_arcache = 4'h3;
   assign m_axi_arlen   = 'h5;
   assign m_axi_araddr  = {next_desc_addr, {BYTES_PER_BEAT_WIDTH_SG{1'b0}}};
-
-  sync_bits #(
-    .NUM_OF_BITS(1),
-    .ASYNC_CLK(ASYNC_CLK_REQ_SG)
-  ) i_sync_sg_enable (
-    .out_clk (m_axi_aclk),
-    .out_resetn (m_axi_aresetn),
-    .in_bits (req_enable),
-    .out_bits (sg_enable));
 
   util_axis_fifo #(
     .DATA_WIDTH(DMA_ADDRESS_WIDTH_SG),
@@ -162,16 +165,16 @@ module dmac_sg #(
     .s_axis_data(req_desc_address),
     .s_axis_room(),
 
-    .m_axis_aclk(m_axi_aclk),
-    .m_axis_aresetn(m_axi_aresetn),
+    .m_axis_aclk(sg_clk),
+    .m_axis_aresetn(sg_resetn),
     .m_axis_valid(sg_in_valid),
     .m_axis_ready(sg_in_ready),
     .m_axis_data(first_desc_address),
     .m_axis_level(),
     .m_axis_empty());
 
-  always @(posedge m_axi_aclk) begin
-    if (m_axi_aresetn == 1'b0) begin
+  always @(posedge sg_clk) begin
+    if (sg_resetn == 1'b0) begin
       hwdesc_counter <= 'h0;
     end else if (m_axi_rvalid) begin
       hwdesc_counter <= hwdesc_counter + 1'b1;
@@ -180,8 +183,8 @@ module dmac_sg #(
     end
   end
 
-  always @(posedge m_axi_aclk) begin
-    if (m_axi_aresetn == 1'b0) begin
+  always @(posedge sg_clk) begin
+    if (sg_resetn == 1'b0) begin
       hwdesc_flags <= 'h00;
       hwdesc_id <= 'h00;
       dest_addr <= 'h00;
@@ -217,8 +220,8 @@ module dmac_sg #(
     end
   end
 
-  always @(posedge m_axi_aclk) begin
-    if (m_axi_aresetn == 1'b0) begin
+  always @(posedge sg_clk) begin
+    if (sg_resetn == 1'b0) begin
       hwdesc_state <= STATE_IDLE;
     end else begin
       case (hwdesc_state)
@@ -260,8 +263,8 @@ module dmac_sg #(
     .ADDRESS_WIDTH(0),
     .ASYNC_CLK(ASYNC_CLK_REQ_SG)
   ) i_sg_desc_fifo (
-    .s_axis_aclk(m_axi_aclk),
-    .s_axis_aresetn(m_axi_aresetn),
+    .s_axis_aclk(sg_clk),
+    .s_axis_aresetn(sg_resetn),
     .s_axis_valid(sg_out_valid),
     .s_axis_ready(sg_out_ready),
     .s_axis_full(),
@@ -288,14 +291,11 @@ module dmac_sg #(
     .m_axis_level(),
     .m_axis_empty());
 
-  wire fifo_splitter_aresetn;
-  assign fifo_splitter_aresetn = m_axi_aresetn & (sg_enable | ~sg_in_ready);
-
   splitter #(
     .NUM_M(2)
   ) i_req_splitter (
-    .clk(m_axi_aclk),
-    .resetn(fifo_splitter_aresetn),
+    .clk(sg_clk),
+    .resetn(sg_resetn),
     .s_valid(fetch_valid),
     .s_ready(fetch_ready),
     .m_valid({
@@ -307,8 +307,6 @@ module dmac_sg #(
       fifo_in_ready
     }));
 
-  wire [32:0] fifo_in_data;
-  wire [32:0] fifo_out_data;
   assign fifo_in_data = {hwdesc_flags & FLAG_EOT_IRQ ? 1'b1 : 1'b0, hwdesc_id};
   assign fifo_out_ready = resp_in_valid;
   assign resp_out_eot = fifo_out_data[32];
@@ -319,15 +317,15 @@ module dmac_sg #(
     .ADDRESS_WIDTH(3),
     .ASYNC_CLK(ASYNC_CLK_REQ_SG)
   ) i_fifo (
-    .s_axis_aclk(m_axi_aclk),
-    .s_axis_aresetn(fifo_splitter_aresetn),
+    .s_axis_aclk(sg_clk),
+    .s_axis_aresetn(sg_resetn),
 
     .s_axis_valid(fifo_in_valid),
     .s_axis_ready(fifo_in_ready),
     .s_axis_data(fifo_in_data),
 
     .m_axis_aclk(req_clk),
-    .m_axis_aresetn(fifo_splitter_aresetn),
+    .m_axis_aresetn(req_resetn),
 
     .m_axis_valid(fifo_out_valid),
     .m_axis_ready(fifo_out_ready),

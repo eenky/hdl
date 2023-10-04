@@ -85,7 +85,6 @@ module axi_dmac_transfer #(
   input [DMA_LENGTH_WIDTH-1:0] req_src_stride,
   input req_sync_transfer_start,
   input req_last,
-  output req_arb_enable,
 
   output req_eot,
   output [31:0] req_sg_desc_id,
@@ -248,6 +247,12 @@ module axi_dmac_transfer #(
   wire src_enable;
   wire src_enabled;
 
+  wire sg_clk;
+  wire sg_ext_resetn;
+  wire sg_resetn;
+  wire sg_enable;
+  wire sg_enabled;
+
   wire req_valid_gated;
   wire req_ready_gated;
 
@@ -257,13 +262,16 @@ module axi_dmac_transfer #(
   axi_dmac_reset_manager #(
     .ASYNC_CLK_REQ_SRC (ASYNC_CLK_REQ_SRC),
     .ASYNC_CLK_SRC_DEST (ASYNC_CLK_SRC_DEST),
-    .ASYNC_CLK_DEST_REQ (ASYNC_CLK_DEST_REQ)
+    .ASYNC_CLK_DEST_REQ (ASYNC_CLK_DEST_REQ),
+    .ASYNC_CLK_REQ_SG (ASYNC_CLK_REQ_SG),
+    .DMA_SG_TRANSFER (DMA_SG_TRANSFER)
   ) i_reset_manager (
     .clk (ctrl_clk),
     .resetn (ctrl_resetn),
 
-    .ctrl_enable (req_arb_enable),
+    .ctrl_enable (ctrl_enable),
     .ctrl_pause (ctrl_pause),
+    .ctrl_hwdesc (ctrl_hwdesc),
 
     .req_resetn (req_resetn),
     .req_enable (req_enable),
@@ -281,6 +289,12 @@ module axi_dmac_transfer #(
     .src_enable (src_enable),
     .src_enabled (src_enabled),
 
+    .sg_clk (sg_clk),
+    .sg_ext_resetn (sg_ext_resetn),
+    .sg_resetn (sg_resetn),
+    .sg_enable (sg_enable),
+    .sg_enabled (sg_enabled),
+
     .dbg_status (dbg_status));
 
   /*
@@ -292,7 +306,6 @@ module axi_dmac_transfer #(
   assign req_valid_gated = req_enable & req_valid;
   assign req_ready = req_enable & req_ready_gated;
 
-  assign req_arb_enable = ctrl_enable | (ctrl_hwdesc & !dma_sg_in_req_ready);
   assign req_eot = ctrl_hwdesc == 1'b1 ? (dma_eot & dma_sg_hwdesc_eot) : dma_eot;
   assign req_sg_desc_id = ctrl_hwdesc == 1'b1 ? dma_sg_hwdesc_id : 'h00;
   assign dma_sg_in_req_valid = ctrl_hwdesc == 1'b1 ? req_valid_gated : 1'b0;
@@ -310,12 +323,15 @@ module axi_dmac_transfer #(
     .BYTES_PER_BEAT_WIDTH_SG(BYTES_PER_BEAT_WIDTH_SG),
     .ASYNC_CLK_REQ_SG(ASYNC_CLK_REQ_SG)
   ) i_dmac_sg (
-    .m_axi_aclk(m_sg_axi_aclk),
-    .m_axi_aresetn(m_sg_axi_aresetn),
-
     .req_clk(req_clk),
     .req_resetn(req_resetn),
-    .req_enable(ctrl_enable),
+    .req_enable(req_enable),
+
+    .sg_clk(sg_clk),
+    .sg_ext_resetn(sg_ext_resetn),
+    .sg_resetn(sg_resetn),
+    .sg_enable(sg_enable),
+    .sg_enabled(sg_enabled),
 
     .req_in_valid(dma_sg_in_req_valid),
     .req_in_ready(dma_sg_in_req_ready),
@@ -336,6 +352,9 @@ module axi_dmac_transfer #(
     .resp_out_eot(dma_sg_hwdesc_eot),
     .resp_in_valid(dma_eot),
 
+    .m_axi_aclk(m_sg_axi_aclk),
+    .m_axi_aresetn(m_sg_axi_aresetn),
+
     .m_axi_arready(m_sg_axi_arready),
     .m_axi_arvalid(m_sg_axi_arvalid),
     .m_axi_araddr(m_sg_axi_araddr),
@@ -353,6 +372,9 @@ module axi_dmac_transfer #(
 
   end else begin
 
+  assign sg_clk = 1'b0;
+  assign sg_ext_resetn = 1'b0;
+  assign sg_enabled = 1'b0;
   assign dma_sg_in_req_ready = 1'b0;
   assign dma_sg_out_req_valid = 1'b0;
   assign dma_sg_hwdesc_eot = 1'b0;
