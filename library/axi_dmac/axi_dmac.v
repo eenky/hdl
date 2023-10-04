@@ -205,6 +205,8 @@ module axi_dmac #(
   output [ 1:0]                            m_sg_axi_arburst,
   output [ 2:0]                            m_sg_axi_arprot,
   output [ 3:0]                            m_sg_axi_arcache,
+  output [AXI_ID_WIDTH_SG-1:0]             m_sg_axi_arid,
+  output [DMA_AXI_PROTOCOL_SG:0]           m_sg_axi_arlock,
 
   // Read data and response
   input  [DMA_DATA_WIDTH_SG-1:0]           m_sg_axi_rdata,
@@ -213,6 +215,28 @@ module axi_dmac #(
   input  [ 1:0]                            m_sg_axi_rresp,
   input  [AXI_ID_WIDTH_SG-1:0]             m_sg_axi_rid,
   input                                    m_sg_axi_rlast,
+
+  // Unused write interface
+  output                                   m_sg_axi_awvalid,
+  output [DMA_AXI_ADDR_WIDTH-1:0]          m_sg_axi_awaddr,
+  output [7-(4*DMA_AXI_PROTOCOL_SG):0]     m_sg_axi_awlen,
+  output [ 2:0]                            m_sg_axi_awsize,
+  output [ 1:0]                            m_sg_axi_awburst,
+  output [ 3:0]                            m_sg_axi_awcache,
+  output [ 2:0]                            m_sg_axi_awprot,
+  input                                    m_sg_axi_awready,
+  output                                   m_sg_axi_wvalid,
+  output [DMA_DATA_WIDTH_SG-1:0]           m_sg_axi_wdata,
+  output [(DMA_DATA_WIDTH_SG/8)-1:0]       m_sg_axi_wstrb,
+  output                                   m_sg_axi_wlast,
+  input                                    m_sg_axi_wready,
+  input                                    m_sg_axi_bvalid,
+  input  [ 1:0]                            m_sg_axi_bresp,
+  output                                   m_sg_axi_bready,
+  output [AXI_ID_WIDTH_SG-1:0]             m_sg_axi_awid,
+  output [DMA_AXI_PROTOCOL_SG:0]           m_sg_axi_awlock,
+  output [AXI_ID_WIDTH_SG-1:0]             m_sg_axi_wid,
+  input  [AXI_ID_WIDTH_SG-1:0]             m_sg_axi_bid,
 
   // Slave streaming AXI interface
   input                                    s_axis_aclk,
@@ -365,32 +389,6 @@ module axi_dmac #(
   wire [11:0] dbg_status;
   wire [31:0] dbg_ids0;
   wire [31:0] dbg_ids1;
-
-  assign m_dest_axi_araddr = 'd0;
-  assign m_dest_axi_arlen = 'd0;
-  assign m_dest_axi_arsize = 'd0;
-  assign m_dest_axi_arburst = 'd0;
-  assign m_dest_axi_arcache = 'd0;
-  assign m_dest_axi_arprot = 'd0;
-  assign m_dest_axi_awid = 'h0;
-  assign m_dest_axi_awlock = 'h0;
-  assign m_dest_axi_wid = 'h0;
-  assign m_dest_axi_arid = 'h0;
-  assign m_dest_axi_arlock = 'h0;
-  assign m_src_axi_awaddr = 'd0;
-  assign m_src_axi_awlen = 'd0;
-  assign m_src_axi_awsize = 'd0;
-  assign m_src_axi_awburst = 'd0;
-  assign m_src_axi_awcache = 'd0;
-  assign m_src_axi_awprot = 'd0;
-  assign m_src_axi_wdata = 'd0;
-  assign m_src_axi_wstrb = 'd0;
-  assign m_src_axi_wlast = 'd0;
-  assign m_src_axi_awid = 'h0;
-  assign m_src_axi_awlock = 'h0;
-  assign m_src_axi_wid = 'h0;
-  assign m_src_axi_arid = 'h0;
-  assign m_src_axi_arlock = 'h0;
 
   wire up_req_eot;
   wire [31:0] up_req_sg_desc_id;
@@ -674,21 +672,47 @@ module axi_dmac #(
   assign m_dest_axi_arburst = 'h0;
   assign m_dest_axi_arcache = 'h0;
   assign m_dest_axi_arprot = 'h0;
+  assign m_dest_axi_awid = 'h0;
+  assign m_dest_axi_awlock = 'h0;
+  assign m_dest_axi_wid = 'h0;
+  assign m_dest_axi_arid = 'h0;
+  assign m_dest_axi_arlock = 'h0;
 
   assign m_src_axi_awvalid = 1'b0;
   assign m_src_axi_wvalid = 1'b0;
   assign m_src_axi_bready = 1'b0;
-  assign m_src_axi_awvalid = 'h0;
   assign m_src_axi_awaddr = 'h0;
   assign m_src_axi_awlen = 'h0;
   assign m_src_axi_awsize = 'h0;
   assign m_src_axi_awburst = 'h0;
   assign m_src_axi_awcache = 'h0;
   assign m_src_axi_awprot = 'h0;
-  assign m_src_axi_wvalid = 'h0;
   assign m_src_axi_wdata = 'h0;
   assign m_src_axi_wstrb = 'h0;
   assign m_src_axi_wlast = 'h0;
+  assign m_src_axi_awid = 'h0;
+  assign m_src_axi_awlock = 'h0;
+  assign m_src_axi_wid = 'h0;
+  assign m_src_axi_arid = 'h0;
+  assign m_src_axi_arlock = 'h0;
+
+  assign m_sg_axi_awvalid = 1'b0;
+  assign m_sg_axi_wvalid = 1'b0;
+  assign m_sg_axi_bready = 1'b0;
+  assign m_sg_axi_awaddr = 'h0;
+  assign m_sg_axi_awlen = 'h0;
+  assign m_sg_axi_awsize = 'h0;
+  assign m_sg_axi_awburst = 'h0;
+  assign m_sg_axi_awcache = 'h0;
+  assign m_sg_axi_awprot = 'h0;
+  assign m_sg_axi_wdata = 'h0;
+  assign m_sg_axi_wstrb = 'h0;
+  assign m_sg_axi_wlast = 'h0;
+  assign m_sg_axi_awid = 'h0;
+  assign m_sg_axi_awlock = 'h0;
+  assign m_sg_axi_wid = 'h0;
+  assign m_sg_axi_arid = 'h0;
+  assign m_sg_axi_arlock = 'h0;
 
   assign m_axis_keep = {DMA_DATA_WIDTH_DEST/8{1'b1}};
   assign m_axis_strb = {DMA_DATA_WIDTH_DEST/8{1'b1}};
