@@ -20,6 +20,7 @@ set_module_property VALIDATION_CALLBACK axi_dmac_validate
 ad_ip_files axi_dmac [list \
   $ad_hdl_dir/library/util_cdc/sync_bits.v \
   $ad_hdl_dir/library/util_cdc/sync_event.v \
+  $ad_hdl_dir/library/util_cdc/sync_gray.v \
   $ad_hdl_dir/library/common/up_axi.v \
   $ad_hdl_dir/library/util_axis_fifo/util_axis_fifo.v \
   $ad_hdl_dir/library/util_axis_fifo/util_axis_fifo_address_generator.v \
@@ -128,6 +129,22 @@ foreach {suffix group} { \
 # FIFO interface
 set_parameter_property DMA_TYPE_SRC DEFAULT_VALUE 2
 
+# Scatter-Gather interface
+add_parameter  DMA_AXI_PROTOCOL_SG INTEGER 1
+set_parameter_property DMA_AXI_PROTOCOL_SG DISPLAY_NAME "AXI Protocol"
+set_parameter_property DMA_AXI_PROTOCOL_SG HDL_PARAMETER true
+set_parameter_property DMA_AXI_PROTOCOL_SG ALLOWED_RANGES { "0:AXI4" "1:AXI3" }
+set_parameter_property DMA_AXI_PROTOCOL_SG VISIBLE true
+set_parameter_property DMA_AXI_PROTOCOL_SG GROUP $group
+
+add_parameter DMA_DATA_WIDTH_SG INTEGER 64
+set_parameter_property DMA_DATA_WIDTH_SG DISPLAY_NAME "Bus Width"
+set_parameter_property DMA_DATA_WIDTH_SG UNITS Bits
+set_parameter_property DMA_DATA_WIDTH_SG HDL_PARAMETER true
+set_parameter_property DMA_DATA_WIDTH_SG ALLOWED_RANGES {64}
+set_parameter_property DMA_DATA_WIDTH_SG VISIBLE true
+set_parameter_property DMA_DATA_WIDTH_SG GROUP $group
+
 set group "Features"
 
 add_parameter CYCLIC INTEGER 1
@@ -141,6 +158,12 @@ set_parameter_property DMA_2D_TRANSFER DISPLAY_NAME "2D Transfer Support"
 set_parameter_property DMA_2D_TRANSFER DISPLAY_HINT boolean
 set_parameter_property DMA_2D_TRANSFER HDL_PARAMETER true
 set_parameter_property DMA_2D_TRANSFER GROUP $group
+
+add_parameter DMA_SG_TRANSFER INTEGER 0
+set_parameter_property DMA_SG_TRANSFER DISPLAY_NAME "SG Transfer Support"
+set_parameter_property DMA_SG_TRANSFER DISPLAY_HINT boolean
+set_parameter_property DMA_SG_TRANSFER HDL_PARAMETER true
+set_parameter_property DMA_SG_TRANSFER GROUP $group
 
 add_parameter SYNC_TRANSFER_START INTEGER 0
 set_parameter_property SYNC_TRANSFER_START DISPLAY_NAME "Transfer Start Synchronization Support"
@@ -159,6 +182,7 @@ foreach {p name} { \
     ASYNC_CLK_REQ_SRC "Request and Source" \
     ASYNC_CLK_SRC_DEST "Source and Destination" \
     ASYNC_CLK_DEST_REQ "Destination and Request" \
+    ASYNC_CLK_REQ_SG "Request and Scatter-Gather" \
   } {
 
   add_parameter ${p}_MANUAL INTEGER 1
@@ -298,6 +322,15 @@ add_interface m_src_axi_reset reset end
 set_interface_property m_src_axi_reset associatedClock m_src_axi_clock
 add_interface_port m_src_axi_reset m_src_axi_aresetn reset_n Input 1
 
+# axi4 scatter-gather
+
+add_interface m_sg_axi_clock clock end
+add_interface_port m_sg_axi_clock m_sg_axi_aclk clk Input 1
+
+add_interface m_sg_axi_reset reset end
+set_interface_property m_sg_axi_reset associatedClock m_sg_axi_clock
+add_interface_port m_sg_axi_reset m_sg_axi_aresetn reset_n Input 1
+
 # axis destination/source
 
 ad_interface clock   m_axis_aclk       input   1                       clk
@@ -410,7 +443,7 @@ proc axi_dmac_elaborate {} {
   set disabled_intfs {}
 
   # add axi3 or axi4 interface depending on user selection
-  foreach {suffix port} {SRC m_src_axi DEST m_dest_axi} {
+  foreach {suffix port} {SRC m_src_axi DEST m_dest_axi SG m_sg_axi} {
     if {[get_parameter_value DMA_AXI_PROTOCOL_${suffix}] == 0} {
       set axi_type axi4
     } else {
@@ -433,6 +466,13 @@ proc axi_dmac_elaborate {} {
     set_interface_property m_src_axi combinedIssuingCapability $fifo_size
   } else {
     lappend disabled_intfs m_src_axi_clock m_src_axi_reset m_src_axi
+  }
+
+  if {[get_parameter_value DMA_SG_TRANSFER] == 1} {
+    set_interface_property m_sg_axi readIssuingCapability $fifo_size
+    set_interface_property m_sg_axi combinedIssuingCapability $fifo_size
+  } else {
+    lappend disabled_intfs m_sg_axi_clock m_sg_axi_reset m_sg_axi
   }
 
   # axis destination/source
