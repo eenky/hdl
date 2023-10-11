@@ -121,7 +121,6 @@ set dummy_axi_ports [list \
 	"m_dest_axi_rdata" \
 	"m_src_axi_awvalid" \
 	"m_src_axi_awready" \
-	"m_src_axi_awvalid" \
 	"m_src_axi_awaddr" \
 	"m_src_axi_awlen" \
 	"m_src_axi_awsize" \
@@ -130,13 +129,28 @@ set dummy_axi_ports [list \
 	"m_src_axi_awprot" \
 	"m_src_axi_wvalid" \
 	"m_src_axi_wready" \
-	"m_src_axi_wvalid" \
 	"m_src_axi_wdata" \
 	"m_src_axi_wstrb" \
 	"m_src_axi_wlast" \
 	"m_src_axi_bready" \
 	"m_src_axi_bvalid" \
 	"m_src_axi_bresp" \
+	"m_sg_axi_awvalid" \
+	"m_sg_axi_awready" \
+	"m_sg_axi_awaddr" \
+	"m_sg_axi_awlen" \
+	"m_sg_axi_awsize" \
+	"m_sg_axi_awburst" \
+	"m_sg_axi_awcache" \
+	"m_sg_axi_awprot" \
+	"m_sg_axi_wvalid" \
+	"m_sg_axi_wready" \
+	"m_sg_axi_wdata" \
+	"m_sg_axi_wstrb" \
+	"m_sg_axi_wlast" \
+	"m_sg_axi_bready" \
+	"m_sg_axi_bvalid" \
+	"m_sg_axi_bresp" \
 ]
 
 # These are in the design to keep the Intel tools happy which require
@@ -156,7 +170,14 @@ lappend dummy_axi_ports \
 	"m_src_axi_awid" \
 	"m_src_axi_awlock" \
 	"m_src_axi_wid" \
-	"m_src_axi_bid"
+	"m_src_axi_bid" \
+	"m_sg_axi_arid" \
+	"m_sg_axi_arlock" \
+	"m_sg_axi_rid" \
+	"m_sg_axi_awid" \
+	"m_sg_axi_awlock" \
+	"m_sg_axi_wid" \
+	"m_sg_axi_bid"
 
 
 foreach p $dummy_axi_ports {
@@ -250,6 +271,8 @@ foreach {k v} { \
         "ASYNC_CLK_SRC_DEST" "true" \
         "ASYNC_CLK_DEST_REQ" "true" \
         "ASYNC_CLK_REQ_SG" "true" \
+        "ASYNC_CLK_SRC_SG" "true" \
+        "ASYNC_CLK_DEST_SG" "true" \
         "CYCLIC" "false" \
         "DMA_2D_TRANSFER" "false" \
         "DMA_SG_TRANSFER" "false" \
@@ -466,6 +489,18 @@ set_property -dict [list \
 	"display_name" "Request and Scatter-Gather Clock Asynchronous" \
 ] $p
 
+set p [ipgui::get_guiparamspec -name "ASYNC_CLK_SRC_SG" -component $cc]
+ipgui::move_param -component $cc -order 4 $p -parent $clk_group
+set_property -dict [list \
+	"display_name" "Source and Scatter-Gather Clock Asynchronous" \
+] $p
+
+set p [ipgui::get_guiparamspec -name "ASYNC_CLK_DEST_SG" -component $cc]
+ipgui::move_param -component $cc -order 5 $p -parent $clk_group
+set_property -dict [list \
+	"display_name" "Destination and Scatter-Gather Clock Asynchronous" \
+] $p
+
 set dbg_group [ipgui::add_group -name {Debug} -component $cc \
 		-parent $page0 -display_name {Debug}]
 
@@ -483,6 +518,7 @@ set_property -dict [list \
 
 ipgui::remove_param -component $cc [ipgui::get_guiparamspec -name "AXI_ID_WIDTH_SRC" -component $cc]
 ipgui::remove_param -component $cc [ipgui::get_guiparamspec -name "AXI_ID_WIDTH_DEST" -component $cc]
+ipgui::remove_param -component $cc [ipgui::get_guiparamspec -name "AXI_ID_WIDTH_SG" -component $cc]
 ipgui::remove_param -component $cc [ipgui::get_guiparamspec -name "ALLOW_ASYM_MEM" -component $cc]
 ipgui::remove_param -component $cc [ipgui::get_guiparamspec -name "DMA_AXIS_ID_W" -component $cc]
 ipgui::remove_param -component $cc [ipgui::get_guiparamspec -name "DMA_AXIS_DEST_W" -component $cc]

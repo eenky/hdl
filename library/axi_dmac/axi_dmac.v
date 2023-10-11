@@ -48,6 +48,8 @@ module axi_dmac #(
   parameter ASYNC_CLK_SRC_DEST = 1,
   parameter ASYNC_CLK_DEST_REQ = 1,
   parameter ASYNC_CLK_REQ_SG = 1,
+  parameter ASYNC_CLK_SRC_SG = 1,
+  parameter ASYNC_CLK_DEST_SG = 1,
   parameter AXI_SLICE_DEST = 0,
   parameter AXI_SLICE_SRC = 0,
   parameter SYNC_TRANSFER_START = 0,

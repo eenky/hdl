@@ -183,6 +183,8 @@ foreach {p name} { \
     ASYNC_CLK_SRC_DEST "Source and Destination" \
     ASYNC_CLK_DEST_REQ "Destination and Request" \
     ASYNC_CLK_REQ_SG "Request and Scatter-Gather" \
+    ASYNC_CLK_SRC_SG "Source and Scatter-Gather" \
+    ASYNC_CLK_DEST_SG "Destination and Scatter-Gather" \
   } {
 
   add_parameter ${p}_MANUAL INTEGER 1
@@ -227,6 +229,12 @@ foreach domain [list {*}$src_clks {*}$dest_clks] {
   set_parameter_property $p GROUP $group
 }
 
+add_parameter CLK_DOMAIN_SG INTEGER
+set_parameter_property CLK_DOMAIN_SG HDL_PARAMETER false
+set_parameter_property CLK_DOMAIN_SG SYSTEM_INFO {CLOCK_DOMAIN m_sg_axi_clock}
+set_parameter_property CLK_DOMAIN_SG VISIBLE false
+set_parameter_property CLK_DOMAIN_SG GROUP $group
+
 # axi4 slave
 
 ad_ip_intf_s_axi s_axi_aclk s_axi_aresetn 11
@@ -256,6 +264,7 @@ proc axi_dmac_validate {} {
     set req_domain [get_parameter_value CLK_DOMAIN_REQ]
     set src_domain [get_parameter_value [lindex $src_clks $type_src 0]]
     set dest_domain [get_parameter_value [lindex $dest_clks $type_dest 0]]
+    set sg_domain [get_parameter_value CLK_DOMAIN_SG]
 
     if {$req_domain != 0 && $req_domain == $src_domain} {
       set_parameter_value ASYNC_CLK_REQ_SRC 0
@@ -274,13 +283,31 @@ proc axi_dmac_validate {} {
     } else {
       set_parameter_value ASYNC_CLK_DEST_REQ 1
     }
+
+    if {$sg_domain != 0 && $sg_domain == $req_domain} {
+      set_parameter_value ASYNC_CLK_REQ_SG 0
+    } else {
+      set_parameter_value ASYNC_CLK_REQ_SG 1
+    }
+
+    if {$sg_domain != 0 && $sg_domain == $src_domain} {
+      set_parameter_value ASYNC_CLK_SRC_SG 0
+    } else {
+      set_parameter_value ASYNC_CLK_SRC_SG 1
+    }
+
+    if {$sg_domain != 0 && $sg_domain == $dest_domain} {
+      set_parameter_value ASYNC_CLK_DEST_SG 0
+    } else {
+      set_parameter_value ASYNC_CLK_DEST_SG 1
+    }
   } else {
-    foreach p {ASYNC_CLK_REQ_SRC ASYNC_CLK_SRC_DEST ASYNC_CLK_DEST_REQ} {
+    foreach p {ASYNC_CLK_REQ_SRC ASYNC_CLK_SRC_DEST ASYNC_CLK_DEST_REQ ASYNC_CLK_REQ_SG ASYNC_CLK_SRC_SG ASYNC_CLK_DEST_SG} {
       set_parameter_value $p [get_parameter_value ${p}_MANUAL]
     }
   }
 
-  foreach p {ASYNC_CLK_REQ_SRC ASYNC_CLK_SRC_DEST ASYNC_CLK_DEST_REQ} {
+  foreach p {ASYNC_CLK_REQ_SRC ASYNC_CLK_SRC_DEST ASYNC_CLK_DEST_REQ ASYNC_CLK_REQ_SG ASYNC_CLK_SRC_SG ASYNC_CLK_DEST_SG} {
     set_parameter_property ${p}_MANUAL VISIBLE [expr $auto_clk ? false : true]
     set_parameter_property $p VISIBLE $auto_clk
   }
