@@ -253,8 +253,8 @@ module axi_dmac_regmap_request #(
   endgenerate
 
   // In cyclic mode the same transfer is submitted over and over again
-  assign up_sot = up_dma_cyclic ? 1'b0 : up_dma_req_valid & up_dma_req_ready;
-  assign up_eot = (!ctrl_hwdesc && up_dma_cyclic) ? 1'b0 : response_eot & response_valid & response_ready;
+  assign up_sot = (up_dma_cyclic && !ctrl_hwdesc) ? 1'b0 : up_dma_req_valid & up_dma_req_ready;
+  assign up_eot = (up_dma_cyclic && !ctrl_hwdesc) ? 1'b0 : response_eot & response_valid & response_ready;
 
   assign request_valid = up_dma_req_valid;
   assign up_dma_req_ready = request_ready;
