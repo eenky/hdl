@@ -314,7 +314,7 @@ module dmac_sg #(
 
   util_axis_fifo #(
     .DATA_WIDTH(33),
-    .ADDRESS_WIDTH(3),
+    .ADDRESS_WIDTH(2),
     .ASYNC_CLK(ASYNC_CLK_REQ_SG)
   ) i_fifo (
     .s_axis_aclk(sg_clk),
