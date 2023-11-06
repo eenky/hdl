@@ -128,7 +128,7 @@ set TX_SAMPLES_PER_CHANNEL [expr $TX_NUM_OF_LANES * 8 * $TX_DATAPATH_WIDTH / ($T
 
 # TODO: Increase the maximum number of quads if necessary
 set max_num_quads 2
-set num_quads [expr int(round(1.0 * $RX_NUM_OF_LANES / 4))]
+set num_quads [expr int(ceil(1.0 * $RX_NUM_OF_LANES / 4))]
 
 source $ad_hdl_dir/library/jesd204/scripts/jesd204.tcl
 
@@ -182,19 +182,25 @@ if {$ADI_PHY_SEL == 1} {
                             ? $ad_project_params(REF_CLK_RATE) : 375 } ]
 
   create_bd_port -dir I gt_reset
+  create_bd_port -dir O gt_powergood
+  create_bd_port -dir O gt_resetdone
+  create_bd_port -dir I link_clk
 
   switch $INTF_CFG {
     "RXTX" {
       # Assumption is that number of Tx and Rx lane is the same
-      create_versal_phy jesd204_phy $TX_NUM_OF_LANES $RX_LANE_RATE $TX_LANE_RATE $REF_CLK_RATE $INTF_CFG
+      create_versal_phy jesd204_phy $JESD_MODE $TX_NUM_OF_LANES $RX_LANE_RATE $TX_LANE_RATE $REF_CLK_RATE $INTF_CFG
     }
     "RX" {
-      create_versal_phy jesd204_phy $RX_NUM_OF_LANES $RX_LANE_RATE $TX_LANE_RATE $REF_CLK_RATE $INTF_CFG
+      create_versal_phy jesd204_phy $JESD_MODE $RX_NUM_OF_LANES $RX_LANE_RATE $TX_LANE_RATE $REF_CLK_RATE $INTF_CFG
     }
     "TX" {
-      create_versal_phy jesd204_phy $TX_NUM_OF_LANES $RX_LANE_RATE $TX_LANE_RATE $REF_CLK_RATE $INTF_CFG
+      create_versal_phy jesd204_phy $JESD_MODE $TX_NUM_OF_LANES $RX_LANE_RATE $TX_LANE_RATE $REF_CLK_RATE $INTF_CFG
     }
   }
+  ad_connect jesd204_phy/link_clk link_clk
+  ad_connect jesd204_phy/gtpowergood gt_powergood
+  ad_connect jesd204_phy/gt_resetdone gt_resetdone
 }
 
 # Instantiate ADC (Rx) path
@@ -366,6 +372,9 @@ if {$ADI_PHY_SEL == 1} {
     ad_connect axi_mxfe_rx_jesd/sysref rx_sysref_0
 
     create_bd_port -dir O rx_sync_0
+    if {$JESD_MODE == "8B10B"} {
+      ad_connect axi_mxfe_rx_jesd/sync rx_sync_0
+    }
   }
   if {$INTF_CFG != "RX"} {
     set tx_link_clock  jesd204_phy/txusrclk_out
@@ -380,6 +389,9 @@ if {$ADI_PHY_SEL == 1} {
     ad_connect axi_mxfe_tx_jesd/sysref tx_sysref_0
 
     create_bd_port -dir I tx_sync_0
+    if {$JESD_MODE == "8B10B"} {
+      ad_connect axi_mxfe_tx_jesd/sync tx_sync_0
+    }
   }
 
   ad_connect $sys_cpu_clk jesd204_phy/apb3clk

@@ -125,18 +125,36 @@ module system_top  #(
   wire    [7:0]   tx_data_p_loc;
   wire    [7:0]   tx_data_n_loc;
 
+  wire            ref_clk_div_2;
   wire            clkin6;
   wire            clkin10;
   wire            tx_device_clk;
   wire            rx_device_clk;
+  wire            link_clk;
+
+  wire            gt_powergood;
 
   // instantiations
-  IBUFDS_GTE5 i_ibufds_ref_clk (
-    .CEB (1'd0),
+  IBUFDS_GTE5 #(
+    .REFCLK_HROW_CK_SEL (0)
+  ) i_ibufds_ref_clk (
+    .CEB (1'b0),
     .I (fpga_refclk_in_p),
     .IB (fpga_refclk_in_n),
     .O (ref_clk),
-    .ODIV2 ());
+    .ODIV2 (ref_clk_div_2));
+
+  BUFG_GT #(
+    .SIM_DEVICE ("VERSAL_AI_CORE")
+  ) i_link_clk (
+    .I (ref_clk_div_2),
+    .O (link_clk),
+    .DIV (0'b0),
+    .CE (1'b1),
+    .CLR (1'b0),
+    .CEMASK (1'b0),
+    .CLRMASK (1'b0)
+  );
 
   IBUFDS i_ibufds_sysref (
     .I (sysref2_p),
@@ -299,10 +317,12 @@ module system_top  #(
     .GT_Serial_1_0_grx_p (rx_data_p_loc[7:4]),
     .GT_Serial_1_0_grx_n (rx_data_n_loc[7:4]),
 
+    .gt_powergood (gt_powergood),
     .gt_reset (~rstb),
     .ref_clk_q0 (ref_clk),
     .ref_clk_q1 (ref_clk),
 
+    .link_clk (link_clk),
     .rx_device_clk (rx_device_clk),
     .tx_device_clk (tx_device_clk),
     .rx_sync_0 (rx_syncout),

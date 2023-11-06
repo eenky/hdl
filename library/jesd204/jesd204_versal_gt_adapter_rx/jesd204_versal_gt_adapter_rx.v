@@ -7,20 +7,31 @@
 
 `timescale 1ns/100ps
 
-module  jesd204_versal_gt_adapter_rx (
+module  jesd204_versal_gt_adapter_rx #(
+    parameter LINK_MODE = 2 // 1 - 8B10B, 2 - 64B66B
+  )(
+  // Interface to Physical Layer
   input  [127 : 0] rxdata,
-  input    [5 : 0] rxheader,
+  input  [  5 : 0] rxheader,
+  input  [ 15 : 0] rxctrl0,
+  input  [ 15 : 0] rxctrl1,
+  input  [  7 : 0] rxctrl2,
+  input  [  7 : 0] rxctrl3,
   output           rxgearboxslip,
   input    [1 : 0] rxheadervalid,
 
   // Interface to Link layer core
-  output  [63:0]  rx_data,
-  output   [1:0]  rx_header,
-  output          rx_block_sync,
+  output  [31 : 0]  rx_data,
+  output  [ 3 : 0]  rx_charisk,
+  output  [ 3 : 0]  rx_disperr,
+  output  [ 3 : 0]  rx_notintable,
+  output  [ 1 : 0]  rx_header,
+  output            rx_block_sync,
 
   input           usr_clk
 );
 
+generate if (LINK_MODE == 2) begin
   // Sync header alignment
   wire rx_bitslip_req_s;
   reg [4:0] rx_bitslip_done_cnt = 'h0;
@@ -55,5 +66,20 @@ module  jesd204_versal_gt_adapter_rx (
     .o_data(rx_data),
     .o_header(rx_header),
     .o_block_sync(rx_block_sync));
+
+    assign rx_disperr    = 4'b0;
+    assign rx_charisk    = 4'b0;
+    assign rx_notintable = 4'b0;
+  end else begin
+    assign rx_data       = rxdata[31:0];
+    assign rx_header     = rxheader[1:0];
+
+    assign rx_charisk    = rxctrl0[3:0];
+    assign rx_disperr    = rxctrl1[3:0];
+    assign rx_notintable = rxctrl3[3:0];
+    assign rx_block_sync = 1'b0;
+    assign rxgearboxslip = 1'b0;
+  end
+  endgenerate
 
 endmodule

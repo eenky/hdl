@@ -23,6 +23,9 @@ adi_add_bus "RX" "master" \
   { \
    { "rx_data" "rxdata" } \
    { "rx_header" "rxheader" } \
+   { "rx_charisk" "rxcharisk"} \
+   { "rx_disperr" "rxdisperr"} \
+   { "rx_notintable" "rxnotintable"} \
    { "rx_block_sync" "rxblock_sync" } \
   }
 
@@ -32,6 +35,10 @@ adi_add_bus "RX_GT_IP_Interface" "master" \
   { \
    { "rxdata" "ch_rxdata" } \
    { "rxheader" "ch_rxheader" } \
+   { "rxctrl0"  "ch_rxctrl0"  } \
+   { "rxctrl1"  "ch_rxctrl1"  } \
+   { "rxctrl2"  "ch_rxctrl2"  } \
+   { "rxctrl3"  "ch_rxctrl3"  } \
    { "rxheadervalid" "ch_rxheadervalid" } \
    { "rxgearboxslip" "ch_rxgearboxslip" } \
   }
