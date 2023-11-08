@@ -18,17 +18,17 @@ module  jesd204_versal_gt_adapter_rx #(
   input  [  7 : 0] rxctrl2,
   input  [  7 : 0] rxctrl3,
   output           rxgearboxslip,
-  input    [1 : 0] rxheadervalid,
+  input  [  1 : 0] rxheadervalid,
 
   // Interface to Link layer core
-  output  [31 : 0]  rx_data,
-  output  [ 3 : 0]  rx_charisk,
-  output  [ 3 : 0]  rx_disperr,
-  output  [ 3 : 0]  rx_notintable,
-  output  [ 1 : 0]  rx_header,
+  output [ 63 : 0]  rx_data,
+  output [  3 : 0]  rx_charisk,
+  output [  3 : 0]  rx_disperr,
+  output [  3 : 0]  rx_notintable,
+  output [  1 : 0]  rx_header,
   output            rx_block_sync,
 
-  input           usr_clk
+  input             usr_clk
 );
 
 generate if (LINK_MODE == 2) begin
@@ -71,7 +71,7 @@ generate if (LINK_MODE == 2) begin
     assign rx_charisk    = 4'b0;
     assign rx_notintable = 4'b0;
   end else begin
-    assign rx_data       = rxdata[31:0];
+    assign rx_data       = {32'b0, rxdata[31:0]};
     assign rx_header     = rxheader[1:0];
 
     assign rx_charisk    = rxctrl0[3:0];
