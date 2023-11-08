@@ -132,19 +132,18 @@ module system_top  #(
   wire            clkin10;
   wire            tx_device_clk;
   wire            rx_device_clk;
-  wire            link_clk;
 
-  wire            gt_powergood;
+  // wire            gt_powergood;
 
   // instantiations
-  IBUFDS_GTE5 #(
-    .REFCLK_HROW_CK_SEL (0)
-  ) i_ibufds_ref_clk (
-    .CEB (1'b0),
-    .I (fpga_refclk_in_p),
-    .IB (fpga_refclk_in_n),
-    .O (ref_clk),
-    .ODIV2 ());
+  // IBUFDS_GTE5 #(
+  //   .REFCLK_HROW_CK_SEL (0)
+  // ) i_ibufds_ref_clk (
+  //   .CEB (1'b0),
+  //   .I (fpga_refclk_in_p),
+  //   .IB (fpga_refclk_in_n),
+  //   .O (ref_clk),
+  //   .ODIV2 (ref_clk_div_2));
 
   // BUFG_GT #(
   //   .SIM_DEVICE ("VERSAL_AI_CORE")
@@ -312,16 +311,25 @@ module system_top  #(
     .spi1_mosi (spi1_mosi),
     .spi1_sclk (spi1_sclk),
     // FMC HPC
-    .GT_Serial_0_0_gtx_p (tx_data_p_loc[3:0]),
-    .GT_Serial_0_0_gtx_n (tx_data_n_loc[3:0]),
-    .GT_Serial_0_0_grx_p (rx_data_p_loc[3:0]),
-    .GT_Serial_0_0_grx_n (rx_data_n_loc[3:0]),
-    .GT_Serial_1_0_gtx_p (tx_data_p_loc[7:4]),
-    .GT_Serial_1_0_gtx_n (tx_data_n_loc[7:4]),
-    .GT_Serial_1_0_grx_p (rx_data_p_loc[7:4]),
-    .GT_Serial_1_0_grx_n (rx_data_n_loc[7:4]),
+    // .GT_Serial_0_0_gtx_p (tx_data_p_loc[3:0]),
+    // .GT_Serial_0_0_gtx_n (tx_data_n_loc[3:0]),
+    // .GT_Serial_0_0_grx_p (rx_data_p_loc[3:0]),
+    // .GT_Serial_0_0_grx_n (rx_data_n_loc[3:0]),
+    // .GT_Serial_1_0_gtx_p (tx_data_p_loc[7:4]),
+    // .GT_Serial_1_0_gtx_n (tx_data_n_loc[7:4]),
+    // .GT_Serial_1_0_grx_p (rx_data_p_loc[7:4]),
+    // .GT_Serial_1_0_grx_n (rx_data_n_loc[7:4]),
 
-    .gt_powergood (gt_powergood),
+    .rx_0_p (rx_data_p_loc[3:0]),
+    .rx_0_n (rx_data_n_loc[3:0]),
+    .tx_0_p (tx_data_p_loc[3:0]),
+    .tx_0_n (tx_data_n_loc[3:0]),
+    .rx_1_p (rx_data_p_loc[7:4]),
+    .rx_1_n (rx_data_n_loc[7:4]),
+    .tx_1_p (tx_data_p_loc[7:4]),
+    .tx_1_n (tx_data_n_loc[7:4]),
+
+    // .gt_powergood (gt_powergood),
     .gt_reset (~rstb),
     .ref_clk_q0 (ref_clk),
     .ref_clk_q1 (ref_clk),

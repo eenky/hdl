@@ -13,28 +13,16 @@ proc create_versal_phy {
   {intf_cfg RXTX}
 } {
 
-set clk_divider 66
-set datapath_width 64
-set internal_datapath_width 64
-set data_encoding 64B66B_ASYNC
-set link_mode 2
-set comma_mask "0000000000"
-set comma_byte_boundary 1
-set comma_p_enable false
-set comma_n_enable false
-if {$jesd_mode == "8B10B"} {
-  set clk_divider 40
-  set datapath_width 32
-  set internal_datapath_width 40
-  set data_encoding 8B10B
-  set link_mode 1
-  set comma_mask "1111111111"
-  set comma_byte_boundary 1
-  set comma_p_enable true
-  set comma_n_enable true
-}
+set clk_divider              [expr { $jesd_mode == "64B66B" ? 66 : 40} ]
+set datapath_width           [expr { $jesd_mode == "64B66B" ? 64 : 32} ]
+set internal_datapath_width  [expr { $jesd_mode == "64B66B" ? 64 : 40} ]
+set data_encoding            [expr { $jesd_mode == "64B66B" ? "64B66B_ASYNC" : "8B10B"} ]
+set link_mode                [expr { $jesd_mode == "64B66B" ? 2 : 1} ]
+set comma_mask               [expr { $jesd_mode == "64B66B" ? "0000000000" : "1111111111"} ]
+set comma_p_enable           [expr { $jesd_mode == "64B66B" ? false : true} ]
+set comma_n_enable           [expr { $jesd_mode == "64B66B" ? false : true} ]
+set num_quads                [expr int(ceil(1.0 * $num_lanes / 4))]
 
-set num_quads [expr int(ceil(1.0 * $num_lanes / 4))]
 set rx_progdiv_clock [format %.3f [expr $rx_lane_rate * 1000 / ${clk_divider}]]
 set tx_progdiv_clock [format %.3f [expr $tx_lane_rate * 1000 / ${clk_divider}]]
 
@@ -124,7 +112,7 @@ set_property -dict [list \
      RX_64B66B_DECODER false \
      RX_64B66B_CRC false \
      OOB_ENABLE false \
-     RX_COMMA_ALIGN_WORD $comma_byte_boundary \
+     RX_COMMA_ALIGN_WORD 1 \
      RX_COMMA_SHOW_REALIGN_ENABLE true \
      PCIE_ENABLE false \
      RX_COMMA_P_ENABLE $comma_p_enable \

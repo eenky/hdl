@@ -130,6 +130,8 @@ set TX_SAMPLES_PER_CHANNEL [expr $TX_NUM_OF_LANES * 8 * $TX_DATAPATH_WIDTH / ($T
 set max_num_quads 2
 set num_quads [expr int(ceil(1.0 * $RX_NUM_OF_LANES / 4))]
 
+set asymmetric_configuration [ expr { [expr $RX_NUM_OF_LANES != $TX_NUM_OF_LANES] ? true : false } ]
+
 source $ad_hdl_dir/library/jesd204/scripts/jesd204.tcl
 
 set adc_data_offload_name mxfe_rx_data_offload
@@ -142,9 +144,6 @@ set dac_data_width [expr $TX_DMA_SAMPLE_WIDTH*$TX_NUM_OF_CONVERTERS*$TX_SAMPLES_
 set dac_dma_data_width $dac_data_width
 set dac_fifo_address_width [expr int(ceil(log(($dac_fifo_samples_per_converter*$TX_NUM_OF_CONVERTERS) / ($dac_data_width/$TX_DMA_SAMPLE_WIDTH))/log(2)))]
 
-create_bd_port -dir I adc_fir_filter_active
-create_bd_port -dir I dac_fir_filter_active
-
 set ADC_FIR_FILTER [ expr { [info exists ad_project_params(ADC_FIR_FILTER)] \
                             ? $ad_project_params(ADC_FIR_FILTER) : 0 } ]
 set DAC_FIR_FILTER [ expr { [info exists ad_project_params(DAC_FIR_FILTER)] \
@@ -153,6 +152,12 @@ set DAC_FIR_FILTER [ expr { [info exists ad_project_params(DAC_FIR_FILTER)] \
 if {$ADC_FIR_FILTER || $DAC_FIR_FILTER} {
   source $ad_hdl_dir/projects/common/xilinx/adi_fir_filter_bd.tcl
 }
+
+# Common ports
+create_bd_port -dir I ref_clk_q0
+create_bd_port -dir I ref_clk_q1
+create_bd_port -dir I adc_fir_filter_active
+create_bd_port -dir I dac_fir_filter_active
 
 # common xcvr
 if {$ADI_PHY_SEL == 1} {
@@ -194,23 +199,51 @@ if {$ADI_PHY_SEL == 1} {
                             ? $ad_project_params(REF_CLK_RATE) : 375 } ]
 
   create_bd_port -dir I gt_reset
-  create_bd_port -dir O gt_powergood
-  create_bd_port -dir O gt_resetdone
+  # create_bd_port -dir O gt_resetdone
 
-  switch $INTF_CFG {
-    "RXTX" {
-      # Assumption is that number of Tx and Rx lane is the same
-      create_versal_phy jesd204_phy $JESD_MODE $TX_NUM_OF_LANES $RX_LANE_RATE $TX_LANE_RATE $REF_CLK_RATE $INTF_CFG
-    }
-    "RX" {
-      create_versal_phy jesd204_phy $JESD_MODE $RX_NUM_OF_LANES $RX_LANE_RATE $TX_LANE_RATE $REF_CLK_RATE $INTF_CFG
-    }
-    "TX" {
-      create_versal_phy jesd204_phy $JESD_MODE $TX_NUM_OF_LANES $RX_LANE_RATE $TX_LANE_RATE $REF_CLK_RATE $INTF_CFG
+  if {$asymmetric_configuration} {
+    create_versal_phy jesd204_phy_rx $JESD_MODE $RX_NUM_OF_LANES $RX_LANE_RATE $TX_LANE_RATE $REF_CLK_RATE RX
+    create_versal_phy jesd204_phy_tx $JESD_MODE $TX_NUM_OF_LANES $RX_LANE_RATE $TX_LANE_RATE $REF_CLK_RATE TX
+    set rx_phy jesd204_phy_rx
+    set tx_phy jesd204_phy_tx
+    ad_connect ref_clk_q0 ${rx_phy}/GT_REFCLK
+    ad_connect ref_clk_q0 ${tx_phy}/GT_REFCLK
+    ad_connect gt_reset ${rx_phy}/gtreset_in
+    ad_connect gt_reset ${tx_phy}/gtreset_in
+    ad_connect $sys_cpu_clk ${rx_phy}/apb3clk
+    ad_connect $sys_cpu_clk ${tx_phy}/apb3clk
+  } else {
+    switch $INTF_CFG {
+      "RXTX" {
+        # Assumption is that number of Tx and Rx lane is the same
+        create_versal_phy jesd204_phy_rxtx $JESD_MODE $RX_NUM_OF_LANES $RX_LANE_RATE $TX_LANE_RATE $REF_CLK_RATE $INTF_CFG
+        set rx_phy jesd204_phy_rxtx
+        set tx_phy jesd204_phy_rxtx
+        ad_connect ref_clk_q0   ${rx_phy}/GT_REFCLK
+        ad_connect ref_clk_q0   ${tx_phy}/GT_REFCLK
+        ad_connect gt_reset     ${rx_phy}/gtreset_in
+        ad_connect gt_reset     ${tx_phy}/gtreset_in
+        ad_connect $sys_cpu_clk ${rx_phy}/apb3clk
+        ad_connect $sys_cpu_clk ${tx_phy}/apb3clk
+      }
+      "RX" {
+        create_versal_phy jesd204_phy_rx $JESD_MODE $RX_NUM_OF_LANES $RX_LANE_RATE $TX_LANE_RATE $REF_CLK_RATE $INTF_CFG
+        set rx_phy jesd204_phy_rx
+        ad_connect ref_clk_q0   ${rx_phy}/GT_REFCLK
+        ad_connect gt_reset     ${rx_phy}/gtreset_in
+        ad_connect $sys_cpu_clk ${rx_phy}/apb3clk
+      }
+      "TX" {
+        create_versal_phy jesd204_phy_tx $JESD_MODE $TX_NUM_OF_LANES $RX_LANE_RATE $TX_LANE_RATE $REF_CLK_RATE $INTF_CFG
+        set tx_phy jesd204_phy_tx
+        ad_connect ref_clk_q0   ${tx_phy}/GT_REFCLK
+        ad_connect gt_reset     ${tx_phy}/gtreset_in
+        ad_connect $sys_cpu_clk ${tx_phy}/apb3clk
+      }
     }
   }
-  ad_connect jesd204_phy/gtpowergood gt_powergood
-  ad_connect jesd204_phy/gt_resetdone gt_resetdone
+  # ad_connect jesd204_phy/gtpowergood gt_powergood
+  # ad_connect jesd204_phy/gt_resetdone gt_resetdone
 }
 
 # Instantiate ADC (Rx) path
@@ -372,8 +405,7 @@ if {$INTF_CFG != "RX"} {
   ad_ip_parameter axi_mxfe_tx_dma CONFIG.DMA_DATA_WIDTH_DEST $dac_dma_data_width
 }
 
-create_bd_port -dir I ref_clk_q0
-create_bd_port -dir I ref_clk_q1
+
 
 if {$ADI_PHY_SEL == 1} {
   for {set i 0} {$i < [expr max($TX_NUM_OF_LANES,$RX_NUM_OF_LANES)]} {incr i} {
@@ -395,13 +427,11 @@ if {$ADI_PHY_SEL == 1} {
     ad_xcvrcon  util_mxfe_xcvr axi_mxfe_tx_xcvr axi_mxfe_tx_jesd {} {} tx_device_clk
   }
 } else {
-  ad_connect ref_clk_q0 jesd204_phy/GT_REFCLK
-  ad_connect gt_reset jesd204_phy/gtreset_in
   if {$INTF_CFG != "TX"} {
-    set rx_link_clock  jesd204_phy/rxusrclk_out
+    set rx_link_clock  ${rx_phy}/rxusrclk_out
     # Connect PHY to Link Layer
     for {set j 0}  {$j < $RX_NUM_OF_LANES} {incr j} {
-      ad_connect  axi_mxfe_rx_jesd/rx_phy${j} jesd204_phy/rx${j}
+      ad_connect  axi_mxfe_rx_jesd/rx_phy${j} ${rx_phy}/rx${j}
     }
     ad_connect  $rx_link_clock /axi_mxfe_rx_jesd/link_clk
     ad_connect  rx_device_clk /axi_mxfe_rx_jesd/device_clk
@@ -415,10 +445,10 @@ if {$ADI_PHY_SEL == 1} {
     }
   }
   if {$INTF_CFG != "RX"} {
-    set tx_link_clock  jesd204_phy/txusrclk_out
+    set tx_link_clock  ${tx_phy}/txusrclk_out
     # Connect PHY to Link Layer
     for {set j 0}  {$j < $TX_NUM_OF_LANES} {incr j} {
-      ad_connect  axi_mxfe_tx_jesd/tx_phy${j} jesd204_phy/tx${j}
+      ad_connect  axi_mxfe_tx_jesd/tx_phy${j} ${tx_phy}/tx${j}
     }
     ad_connect  $tx_link_clock /axi_mxfe_tx_jesd/link_clk
     ad_connect  tx_device_clk /axi_mxfe_tx_jesd/device_clk
@@ -431,8 +461,6 @@ if {$ADI_PHY_SEL == 1} {
       ad_connect axi_mxfe_tx_jesd/sync tx_sync_0
     }
   }
-
-  ad_connect $sys_cpu_clk jesd204_phy/apb3clk
 }
 
 if {$INTF_CFG != "TX"} {
@@ -591,18 +619,48 @@ if {$ADI_PHY_SEL == 1} {
     }
   }
 } else {
-  for {set j 0} {$j < $num_quads} {incr j} {
-    make_bd_intf_pins_external  [get_bd_intf_pins jesd204_phy/GT_Serial_${j}]
+  if {!$asymmetric_configuration} {
+    for {set j 0} {$j < $num_quads} {incr j} {
+      if {$INTF_CFG != "TX"} {
+        make_bd_pins_external  [get_bd_intf_pins ${rx_phy}/GT_Serial_${j}_grx_p]
+        make_bd_pins_external  [get_bd_intf_pins ${rx_phy}/GT_Serial_${j}_grx_n]
+        set_property rx${j}_p [get_bd_nets GT_Serial_${j}_grx_p_0]
+        set_property rx${j}_n [get_bd_nets GT_Serial_${j}_grx_n_0]
+      }
+      if {$INTF_CFG != "RX"} {
+        make_bd_pins_external  [get_bd_intf_pins ${tx_phy}/GT_Serial_${j}_gtx_p]
+        make_bd_pins_external  [get_bd_intf_pins ${tx_phy}/GT_Serial_${j}_gtx_n]
+        set_property tx${j}_p [get_bd_nets GT_Serial_${j}_gtx_p_0]
+        set_property tx${j}_n [get_bd_nets GT_Serial_${j}_gtx_n_0]
+      }
+    }
+  } else {
+    set num_quads_rx [expr int(ceil(1.0 * $RX_NUM_OF_LANES / 4))]
+    set num_quads_tx [expr int(ceil(1.0 * $TX_NUM_OF_LANES / 4))]
+    # Map the first RX lanes to the RX phy
+    for {set j 0} {$j < $num_quads_rx} {incr j} {
+      create_bd_port -dir I -from 3 -to 0 rx_${j}_p
+      create_bd_port -dir I -from 3 -to 0 rx_${j}_n
+      ad_connect rx_${j}_p ${rx_phy}/GT_Serial_${j}_grx_p
+      ad_connect rx_${j}_n ${rx_phy}/GT_Serial_${j}_grx_n
+    }
+    # Map the first TX lanes on the TX phy
+    for {set j 0} {$j < $num_quads_tx} {incr j} {
+      create_bd_port -dir O -from 3 -to 0 tx_${j}_p
+      create_bd_port -dir O -from 3 -to 0 tx_${j}_n
+      ad_connect tx_${j}_p ${tx_phy}/GT_Serial_${j}_gtx_p
+      ad_connect tx_${j}_n ${tx_phy}/GT_Serial_${j}_gtx_n
+    }
   }
   # Unused serial lanes
-  for {set i $num_quads} {$i < $max_num_quads} {incr i} {
+  for {set j $num_quads} {$j < $max_num_quads} {incr j} {
     if {$INTF_CFG != "TX"} {
-      create_bd_port -dir I -from 3 -to 0 GT_Serial_${i}_0_grx_p
-      create_bd_port -dir I -from 3 -to 0 GT_Serial_${i}_0_grx_n
+      create_bd_port -dir I -from 3 -to 0 rx_${j}_p
+      create_bd_port -dir I -from 3 -to 0 rx_${j}_n
     }
     if {$INTF_CFG != "RX"} {
-      create_bd_port -dir O -from 3 -to 0 GT_Serial_${i}_0_gtx_p
-      create_bd_port -dir O -from 3 -to 0 GT_Serial_${i}_0_gtx_n
+      create_bd_port -dir O -from 3 -to 0 tx_${j}_p
+      create_bd_port -dir O -from 3 -to 0 tx_${j}_n
     }
   }
 }
