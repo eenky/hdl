@@ -125,7 +125,9 @@ module system_top  #(
   wire    [7:0]   tx_data_p_loc;
   wire    [7:0]   tx_data_n_loc;
 
-  wire            ref_clk_div_2;
+  wire            adc_fir_filter_active;
+  wire            dac_fir_filter_active;
+
   wire            clkin6;
   wire            clkin10;
   wire            tx_device_clk;
@@ -142,19 +144,19 @@ module system_top  #(
     .I (fpga_refclk_in_p),
     .IB (fpga_refclk_in_n),
     .O (ref_clk),
-    .ODIV2 (ref_clk_div_2));
+    .ODIV2 ());
 
-  BUFG_GT #(
-    .SIM_DEVICE ("VERSAL_AI_CORE")
-  ) i_link_clk (
-    .I (ref_clk_div_2),
-    .O (link_clk),
-    .DIV (0'b0),
-    .CE (1'b1),
-    .CLR (1'b0),
-    .CEMASK (1'b0),
-    .CLRMASK (1'b0)
-  );
+  // BUFG_GT #(
+  //   .SIM_DEVICE ("VERSAL_AI_CORE")
+  // ) i_link_clk (
+  //   .I (ref_clk_div_2),
+  //   .O (link_clk),
+  //   .DIV (0'b0),
+  //   .CE (1'b1),
+  //   .CLR (1'b0),
+  //   .CEMASK (1'b0),
+  //   .CLRMASK (1'b0)
+  // );
 
   IBUFDS i_ibufds_sysref (
     .I (sysref2_p),
@@ -226,12 +228,14 @@ module system_top  #(
   assign gpio_i[52] = irqb[0];
   assign gpio_i[53] = irqb[1];
 
-  assign hmc_sync   = gpio_o[54];
-  assign rstb       = gpio_o[55];
-  assign rxen[0]    = gpio_o[56];
-  assign rxen[1]    = gpio_o[57];
-  assign txen[0]    = gpio_o[58];
-  assign txen[1]    = gpio_o[59];
+  assign adc_fir_filter_active = gpio_o[52];
+  assign dac_fir_filter_active = gpio_o[53];
+  assign hmc_sync              = gpio_o[54];
+  assign rstb                  = gpio_o[55];
+  assign rxen[0]               = gpio_o[56];
+  assign rxen[1]               = gpio_o[57];
+  assign txen[0]               = gpio_o[58];
+  assign txen[1]               = gpio_o[59];
 
   generate
   if (TX_NUM_LINKS > 1 & JESD_MODE == "8B10B") begin
@@ -263,8 +267,8 @@ module system_top  #(
   endgenerate
 
   /* Board GPIOS. Buttons, LEDs, etc... */
-  assign gpio_led = gpio_o[3:0];
-  assign gpio_i[3:0] = gpio_o[3:0];
+  assign gpio_led     = gpio_o[3:0];
+  assign gpio_i[3:0]  = gpio_o[3:0];
   assign gpio_i[7: 4] = gpio_dip_sw;
   assign gpio_i[9: 8] = gpio_pb;
 
@@ -322,7 +326,9 @@ module system_top  #(
     .ref_clk_q0 (ref_clk),
     .ref_clk_q1 (ref_clk),
 
-    .link_clk (link_clk),
+    .adc_fir_filter_active (adc_fir_filter_active),
+    .dac_fir_filter_active (dac_fir_filter_active),
+
     .rx_device_clk (rx_device_clk),
     .tx_device_clk (tx_device_clk),
     .rx_sync_0 (rx_syncout),
