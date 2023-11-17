@@ -20,17 +20,10 @@ HDL Reference Designs
    :caption: Projects
    :hidden:
 
-<<<<<<< HEAD
    AD7616-SDZ <projects/ad7616_sdz/index>
    AD9081-FMCA-EBZ/AD9082-FMCA-EBZ <projects/ad9081_fmca_ebz/index>
    AD9783-EBZ <projects/ad9783_ebz/index>
    ADAQ7980-SDZ <projects/adaq7980_sdz/index>
-=======
-   projects/ad7616_sdz/index
-   projects/ad9081_fmca_ebz/index
-   projects/ad9783_ebz/index
-   projects/ad719x_asdz/index
->>>>>>> d53c92762 (docs/projects/ad719x_asdz_coraz7s: Modified the AD719x documentation)
 
 .. role:: red
 .. role:: green
