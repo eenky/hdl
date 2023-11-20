@@ -52,7 +52,6 @@ Supported carriers
 -------------------------------------------------------------------------------
 
 -  :xilinx:`ZedBoard <products/boards-and-kits/1-8dyf-11.html>` on FMC slot
--  :adi:`SDP-H1` on FMC slot
 
 Block design
 -------------------------------------------------------------------------------
@@ -70,7 +69,7 @@ Block diagram
 AD7606x_FMCZ serial interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. image:: ../images/ad7606x_fmcz/ad7606x_serial_hdl.svg
+.. image:: ad7606x_serial_hdl.svg
    :width: 800
    :align: center
    :alt: AD7606X_FMC using the serial interface block diagram
@@ -78,7 +77,7 @@ AD7606x_FMCZ serial interface
 AD7606x_FMCZ parallel interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. image:: ../images/ad7606x_fmcz/ad7606x_parallel_hdl.svg
+.. image:: ad7606x_parallel_hdl.svg
    :width: 800
    :align: center
    :alt: AD7606X_FMC using the parallel interface block diagram
@@ -154,31 +153,6 @@ P16                Inserted         Connects the V7- line to ground
 S1                 On               Controls the OS0, OS1, and OS2 pins
 ================== ================ ====================================
 
-IP list
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
--  :git-hdl:`AD_EDGE_DETECT <main:library/common/ad_edge_detect.v>` **
--  :git-hdl:`AXI_AD7606 <main:library/axi_ad7606x>` *
--  :git-hdl:`AXI_CLKGEN <main:library/axi_clkgen>` **
--  :git-hdl:`AXI_DMAC <main:library/axi_dmac>`
--  :git-hdl:`AXI_HDMI_TX <main:library/axi_hdmi_tx>`
--  :git-hdl:`AXI_I2S_ADI <main:library/axi_i2s_adi>`
--  :git-hdl:`AXI_PWM_GEN <main:library/axi_pwm_gen>`
--  :git-hdl:`AXI_SPDIF_TX <main:library/axi_spdif_tx>`
--  :git-hdl:`AXI_SPI_ENGINE <main:library/spi_engine/axi_spi_engine>` **
--  :git-hdl:`AXI_SYSID <main:library/axi_sysid>`
--  :git-hdl:`SPI_ENGINE_EXECUTION <main:library/spi_engine/spi_engine_execution>` **
--  :git-hdl:`SPI_ENGINE_INTERCONNECT <main:library/spi_engine/spi_engine_interconnect>` **
--  :git-hdl:`SPI_ENGINE_OFFLOAD <main:library/spi_engine/spi_engine_offload>` **
--  :git-hdl:`SYNC_BITS <main:library/util_cdc/sync_bits.v>` **
--  :git-hdl:`SYSID_ROM <main:library/sysid_rom>`
-
-.. admonition:: Legend
-   :class: note
-
-   -   ``*`` instantiated only for INTF=0 (parallel interface)
-   -   ``**`` instantiated only for INTF=1 (serial interface)
-
 CPU/Memory interconnects addresses
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -188,9 +162,9 @@ Instance                  Address
 axi_ad7606x_dma           0x44a30000
 spi_clkgen                0x44a70000
 ad7606_pwm_gen **         0x44b00000
-ad7606_pwm_gen *          0x44A60000
+ad7606_pwm_gen *          0x44a60000
 spi_ad7616_axi_regmap **  0x44a00000
-axi_ad7606x *             0x44A00000
+axi_ad7606x *             0x44a00000
 ========================  ==========
 
 .. admonition:: Legend
@@ -215,12 +189,12 @@ I2C connections
      - iic_fmc
      - axi_iic_fmc
      - 0x4162_0000
-     - \-
+     - ---
    * - PL
      - iic_main
      - axi_iic_main
      - 0x4160_0000
-     - \-
+     - ---
 
 SPI connections
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -362,13 +336,16 @@ Systems related
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  :dokuwiki:`AD7606X HDL Reference Design <resources/eval/user-guides/ad7606x-fmc/hdl>`
--  :dokuwiki:`AXI_AD7616 <resources/fpga/docs/axi_ad7606x>`
--  :dokuwiki:`AD7606-No-OS Driver <resources/tools-software/uc-drivers/ad7606>`
 
 Hardware related
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Product datasheet: :adi:`AD7606`
+-  Product datasheet: :adi:`AD7606B`
+-  Product datasheet: :adi:`AD7606C-16`
+-  Product datasheet: :adi:`AD7606C-18`
+-  Product datasheet: :adi:`ADP7118`
+-  Product datasheet: :adi:`ADR4525`
 
 -  `UG-1870, Evaluation Board User Guide <https://www.analog.com/media/en/technical-documentation/user-guides/eval-ad7606c-fmcz-ug-1870.pdf>`__
 
@@ -376,6 +353,8 @@ HDL related
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  :git-hdl:`ad7616x_fmc HDL project <main:projects/ad7606x_fmc>`
+-  :dokuwiki:`AXI_AD7616 <resources/fpga/docs/axi_ad7606x>`
+-  :ref:`SPI_ENGINE <spi_engine>`
 
 .. list-table::
    :widths: 30 35 35
@@ -384,14 +363,17 @@ HDL related
    * - IP name
      - Source code link
      - Documentation link
+   * - SYNC_BITS
+     - :git-hdl:`library/util_cdc/sync_bits.v <main:library/util_cdc/sync_bits.v>` **
+     - ---
    * - AD_EDGE_DETECT
      - :git-hdl:`library/common/ad_edge_detect.v <main:library/common/ad_edge_detect.v>`
-     -
-   * - AXI_AD7606
+     - ---
+   * - AXI_AD7606x
      - :git-hdl:`library/axi_ad7606x <main:library/axi_ad7606x>` *
      - :dokuwiki:`[Wiki] <resources/fpga/docs/axi_ad7606x>`
    * - AXI_CLKGEN
-     - :git-hdl:`library/axi_dmac <main:library/axi_clkgen>` **
+     - :git-hdl:`library/axi_dmac <main:library/axi_clkgen>`
      - :dokuwiki:`[Wiki] <resources/fpga/docs/axi_clkgen>`
    * - AXI_DMAC
      - :git-hdl:`library/axi_dmac <master:library/axi_dmac>`
@@ -401,16 +383,25 @@ HDL related
      - :dokuwiki:`[Wiki] <resources/fpga/docs/axi_hdmi_tx>`
    * - AXI_I2S_ADI
      - :git-hdl:`library/axi_i2s_adi <main:library/axi_i2s_adi>`
-     -
+     - ---
    * - AXI_PWM_GEN
      - :git-hdl:`library/axi_pwm_gen <main:library/axi_pwm_gen>`
      - :dokuwiki:`[Wiki] <resources/fpga/docs/axi_pwm_gen>`
    * - AXI_SPDIF_TX
      - :git-hdl:`library/axi_spdif_tx <main:library/axi_spdif_tx>`
-     -
+     - ---
    * - AXI_SYSID
      - :git-hdl:`library/axi_sysid <main:library/axi_sysid>`
      - :dokuwiki:`[Wiki] <resources/fpga/docs/axi_sysid>`
+   * - SYSID_ROM
+     - :git-hdl:`library/sysid_rom <main:library/sysid_rom>`
+     - :dokuwiki:`[Wiki] <resources/fpga/docs/axi_sysid>`
+   * - UTIL_I2C-MIXER
+     - :git-hdl:`library/util_i2c_mixer <main:library/util_i2c_mixer>`
+     - ---
+   * - UTIL_CPACK2
+     - :git-hdl:`library/util_pack/util_cpack2 <main:library/util_pack/util_cpack2>` *
+     - :dokuwiki:`[Wiki] <resources/fpga/docs/util_cpack>`
    * - AXI_SPI_ENGINE
      - :git-hdl:`library/spi_engine/axi_spi_engine <main:library/spi_engine/axi_spi_engine>`  **
      - :ref:`here <spi_engine axi>`
@@ -423,12 +414,6 @@ HDL related
    * - SPI_ENGINE_OFFLOAD
      - :git-hdl:`library/spi_engine/spi_engine_offload <main:library/spi_engine/spi_engine_offload>` **
      - :ref:`here <spi_engine offload>`
-   * - SYNC_BITS
-     - :git-hdl:`library/util_cdc/sync_bits.v <main:library/util_cdc/sync_bits.v>`
-     - 
-   * - SYSID_ROM
-     - :git-hdl:`library/sysid_rom <main:library/sysid_rom>`
-     -
 
 .. admonition:: Legend
    :class: note
@@ -436,13 +421,11 @@ HDL related
    -   ``*`` instantiated only for INTF=0 (parallel interface)
    -   ``**`` instantiated only for INTF=1 (serial interface)
 
--  :ref:`SPI_ENGINE <spi_engine>`
-
 Software related
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  :git-no-os:`AD7606 - No-OS Driver <main:drivers/adc/ad7606>`
-
+-  :git-no-os:`AD7606 - No-OS Driver <drivers/adc/ad7606>`
+-  :dokuwiki:`AD7606 - No-OS Driver <resources/tools-software/uc-drivers/ad7606>`
 -  :dokuwiki:`How to build No-OS <resources/no-os/build>`
 
 .. include:: ../common/more_information.rst
