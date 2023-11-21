@@ -149,6 +149,7 @@ def validate_links(app, env):
 		logger.info(f"Skipping {len(env.links)} URLs checks-ups. Set validate_links to True to enable this.")
 		return
 
+	global asyncio, aiohttp
 	import asyncio
 	import aiohttp
 
