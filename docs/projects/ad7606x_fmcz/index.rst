@@ -127,19 +127,20 @@ the ADC clock:
 By default is set to 0.
 
 Jumper setup
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-================== ================ ====================================
+================== ================ =============================================
 Jumper/Solder link Default Position Description
-================== ================ ====================================
+================== ================ =============================================
 JP1                A                The STBY pin is tied to VDRIVE
 JP2                A                12V supply from the carrier
 JP3                A                3.3V supply from the ADP7118
 JP4                A                ±10V range is selected
 JP5                A                Serial interface
-JP6                B                The internal reference is disabled, and the external 
-                                    reference is selected. P5 must be inserted if using 
-                                    the on-board U1 device
+JP6                B                The internal reference is disabled, and
+                                    the external reference is selected.
+                                    P5 must be inserted if using the on-board
+                                    U1 device
 JP7                B                Connects the V1- line to the J5 SMB connector
 JP8,JP10           A                Bypasses the amplifier mezzanine card
 JP9,JP11           A                Bypasses the amplifier mezzanine card
@@ -151,10 +152,10 @@ P14                Inserted         Connects the V8- line to ground
 P15                Inserted         Connects the V6- line to ground
 P16                Inserted         Connects the V7- line to ground
 S1                 On               Controls the OS0, OS1, and OS2 pins
-================== ================ ====================================
+================== ================ =============================================
 
 CPU/Memory interconnects addresses
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ========================  ==========
 Instance                  Address
