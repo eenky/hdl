@@ -179,7 +179,7 @@ async def async_validate_links(app, env):
 	step = 25
 
 	links = list(env.links)
-	leng = total%step+2 if total%step != 0 else total%step+1
+	leng = int(total/step)+1 if total%step != 0 else int(total/step)
 	for i in range(0, leng):
 		cur = i*step
 		end = total if (i+1)*step > total else (i+1)*step
