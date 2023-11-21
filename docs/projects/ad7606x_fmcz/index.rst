@@ -161,8 +161,7 @@ Instance                  Address
 ========================  ==========
 axi_ad7606x_dma           0x44a30000
 spi_clkgen                0x44a70000
-ad7606_pwm_gen **         0x44b00000
-ad7606_pwm_gen *          0x44a60000
+ad7606_pwm_gen            0x44b00000
 spi_ad7616_axi_regmap **  0x44a00000
 axi_ad7606x *             0x44a00000
 ========================  ==========
