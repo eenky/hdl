@@ -3,11 +3,9 @@
 ### SPDX short identifier: ADIBSD
 ###############################################################################
 
+import subprocess
 from docutils import nodes
 from sphinx.util import logging
-import subprocess
-import asyncio
-import aiohttp
 
 logger = logging.getLogger(__name__)
 validate_links_user_agent = 'Status resolver (Python/Sphinx)'
@@ -150,6 +148,9 @@ def validate_links(app, env):
 	if not env.config.validate_links:
 		logger.info(f"Skipping {len(env.links)} URLs checks-ups. Set validate_links to True to enable this.")
 		return
+
+	import asyncio
+	import aiohttp
 
 	asyncio.run(
 		async_validate_links(app, env)
